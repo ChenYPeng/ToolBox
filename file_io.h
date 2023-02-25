@@ -8,13 +8,6 @@
 
 #include "utils.h"
 
-void loadPointCloud(const std::string& filename, pcl::PointCloud<PointT>::Ptr& cloud);
-void loadPointCloudFromTxt(const std::string &file_path, const char tag, const pcl::PointCloud<pcl::PointXYZ>::Ptr &read_cloud);
-void loadEulerAngleFormTxt(const std::string &file_path, std::vector<Eigen::VectorXf> &angles);
-void loadMatrixPointFormTxt(const std::string &file_path, Eigen::MatrixXf &cloud_matrix);
-void savePointCloudToFile(const pcl::PointCloud<PointT>::Ptr write_cloud, const std::string file_path);
-void loadMatrix4fFormTxt(const std::string &file_path, Eigen::Matrix4f &matrix);
-void saveMatrixToFile(const Eigen::Matrix4f matrix, const std::string &file_path);
 
 void loadPointCloud(const std::string& filename, pcl::PointCloud<PointT>::Ptr &cloud)
 {
