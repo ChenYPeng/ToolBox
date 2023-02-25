@@ -3,104 +3,54 @@
 #include <pcl/common/transforms.h>
 #include <pcl/ModelCoefficients.h>
 
-#include <pcl/filters/voxel_grid.h>						// ÌåËØ²ÉÑù
-#include <pcl/keypoints/uniform_sampling.h>				// ¾ùÔÈ²ÉÑù
-#include <pcl/filters/random_sample.h>					// Ëæ»ú²ÉÑù
-#include <pcl/filters/normal_space.h>					// ·¨Ïß¿Õ¼ä²ÉÑù
-#include <pcl/filters/sampling_surface_normal.h>		// Ë÷Òı¿Õ¼ä²ÉÑù
+#include <pcl/filters/voxel_grid.h>						// ä½“ç´ é‡‡æ ·
+#include <pcl/keypoints/uniform_sampling.h>				// å‡åŒ€é‡‡æ ·
+#include <pcl/filters/random_sample.h>					// éšæœºé‡‡æ ·
+#include <pcl/filters/normal_space.h>					// æ³•çº¿ç©ºé—´é‡‡æ ·
+#include <pcl/filters/sampling_surface_normal.h>		// ç´¢å¼•ç©ºé—´é‡‡æ ·
 
-#include <pcl/filters/passthrough.h>					// Ö±Í¨ÂË²¨
-#include <pcl/filters/statistical_outlier_removal.h>	// Í³¼ÆÂË²¨
-#include <pcl/filters/radius_outlier_removal.h>			// °ë¾¶ÂË²¨
-#include <pcl/filters/conditional_removal.h>			// Ìõ¼şÂË²¨
-#include <pcl/filters/extract_indices.h>				// Ë÷ÒıÌáÈ¡
-#include <pcl/filters/project_inliers.h>				// Í¶Ó°ÂË²¨
-#include <pcl/filters/model_outlier_removal.h>			// Ä£ĞÍÂË²¨
-#include <pcl/filters/convolution_3d.h>					// ¸ßË¹ÂË²¨
+#include <pcl/filters/passthrough.h>					// ç›´é€šæ»¤æ³¢
+#include <pcl/filters/statistical_outlier_removal.h>	// ç»Ÿè®¡æ»¤æ³¢
+#include <pcl/filters/radius_outlier_removal.h>			// åŠå¾„æ»¤æ³¢
+#include <pcl/filters/conditional_removal.h>			// æ¡ä»¶æ»¤æ³¢
+#include <pcl/filters/extract_indices.h>				// ç´¢å¼•æå–
+#include <pcl/filters/project_inliers.h>				// æŠ•å½±æ»¤æ³¢
+#include <pcl/filters/model_outlier_removal.h>			// æ¨¡å‹æ»¤æ³¢
+#include <pcl/filters/convolution_3d.h>					// é«˜æ–¯æ»¤æ³¢
 
 #include "utils.h"
 
 
-// ÌåËØ²ÉÑù £¨ÒÆ¶¯µãÔÆÎ»ÖÃ£©
-void downSampleVoxelGrids(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr &cloud_filtered, float lx = 3.0, float ly = 3.0, float lz = 3.0);
-
-// ¾ùÔÈ²ÉÑù £¨²»ÒÆ¶¯µãÔÆÎ»ÖÃ£©
-void uniformSampling(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr &cloud_filtered, double radius = 3.0);
-
-// Ëæ»ú²ÉÑù
-void randomSampling(const pcl::PointCloud<PointT>::Ptr cloud, int sample_num, pcl::PointCloud<PointT>::Ptr& cloud_filtered);
-
-// ·¨Ïß¿Õ¼ä²ÉÑù
-void normalSpaceSampling(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, pcl::PointCloud<PointT>::Ptr& cloud_filtered);
-
-// Ë÷Òı¿Õ¼ä²ÉÑù
-void surfaceNormalSampling(const pcl::PointCloud<PointNormalT>::Ptr cloud_with_normals, pcl::PointCloud<PointNormalT>::Ptr& cloud_filtered);
-
-// Ö±Í¨ÂË²¨
-void pass_through_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered, char *axis = "z", int min = -300, int max = 300);
-
-// Í³¼ÆÂË²¨
-void statistical_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered, int nr_k = 50, double stddev_mult = 2.0);
-
-// °ë¾¶ÂË²¨
-void radius_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered, double radius = 3.0, int min_pts = 10);
-
-void condition_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered);
-
-void extract_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointIndices::Ptr inliers, pcl::PointCloud<PointT>::Ptr& cloud_filtered);
-
-void project_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::ModelCoefficients::Ptr coefficients, pcl::PointCloud<PointT>::Ptr& cloud_projected);
-
-void model_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::ModelCoefficients model_coeff, pcl::PointCloud<PointT>::Ptr& cloud_filtered);
-
-void gaussian_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered);
-
-// ·½¿òÂË²¨
-void box_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered, Eigen::Vector4f min_pt, Eigen::Vector4f max_pt);
-// ÇòĞÎÂË²¨
-void kdtree_Filter(const pcl::PointCloud<PointT>::Ptr & pcloud, const PointT & pnt, double r, pcl::PointCloud<PointT>::Ptr & out_cloud);
-
-
-void removeZeoPoints(const pcl::PointCloud<PointT>::Ptr source_cloud, pcl::PointCloud<PointT>::Ptr& extract_cloud);
-void remove_tf_zeo_point(const pcl::PointCloud<PointT>::Ptr source_cloud, const Eigen::Matrix4f T_c2b, pcl::PointCloud<PointT>::Ptr &extract_cloud);
-
-// É¾³ıµãÔÆÄÚ²¿ÖØºÏµã
-void remove_repeat_point(const pcl::PointCloud<PointT>::Ptr source_cloud, pcl::PointCloud<PointT>::Ptr& filtered_cloud);
-
-// É¾³ıÁ½¸öµãÔÆµÄÖØºÏµã
-void remove_overlap_cloud(const pcl::PointCloud<PointT>::Ptr cloud_a, const pcl::PointCloud<PointT>::Ptr cloud_b, pcl::PointCloud<PointT>::Ptr &cloud_a_out);
-
-
-// -----------------ÌåËØ²ÉÑù-------------------
+// -----------------ä½“ç´ é‡‡æ ·-------------------
 void downSampleVoxelGrids(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr &cloud_filtered, float lx, float ly, float lz)
 {
 	/*
-	¸ù¾İÊäÈëµÄµãÔÆ£¬Ê×ÏÈ¼ÆËãÒ»¸öÄÜ¹»¸ÕºÃ°ü¹ü×¡¸ÃµãÔÆµÄÁ¢·½Ìå
-	È»ºó¸ù¾İÉè¶¨µÄ·Ö±æÂÊ£¬½«¸Ã´óÁ¢·½Ìå·Ö¸î³É²»Í¬µÄĞ¡Á¢·½Ìå
-	¶ÔÓÚÃ¿Ò»¸öĞ¡Á¢·½ÌåÄÚµÄµã£¬¼ÆËãËûÃÇµÄÖÊĞÄ£¬²¢ÓÃ¸ÃÖÊĞÄµÄ×ø±êÀ´½üËÆ¸ÃÁ¢·½ÌåÄÚµÄÈô¸Éµã
+	æ ¹æ®è¾“å…¥çš„ç‚¹äº‘ï¼Œé¦–å…ˆè®¡ç®—ä¸€ä¸ªèƒ½å¤Ÿåˆšå¥½åŒ…è£¹ä½è¯¥ç‚¹äº‘çš„ç«‹æ–¹ä½“
+	ç„¶åæ ¹æ®è®¾å®šçš„åˆ†è¾¨ç‡ï¼Œå°†è¯¥å¤§ç«‹æ–¹ä½“åˆ†å‰²æˆä¸åŒçš„å°ç«‹æ–¹ä½“
+	å¯¹äºæ¯ä¸€ä¸ªå°ç«‹æ–¹ä½“å†…çš„ç‚¹ï¼Œè®¡ç®—ä»–ä»¬çš„è´¨å¿ƒï¼Œå¹¶ç”¨è¯¥è´¨å¿ƒçš„åæ ‡æ¥è¿‘ä¼¼è¯¥ç«‹æ–¹ä½“å†…çš„è‹¥å¹²ç‚¹
 	*/
-	pcl::VoxelGrid<PointT> vg;			// ´´½¨ÂË²¨Æ÷¶ÔÏó
-	vg.setInputCloud(cloud);			// ÉèÖÃ´ıÂË²¨µÄµãÔÆ
-	vg.setLeafSize(lx, ly, lz);			// ÉèÖÃ×îĞ¡ÌåËØ±ß³¤ µ¥Î» m
-	vg.filter(*cloud_filtered);			// Ö´ĞĞÂË²¨£¬±£´æÂË²¨½á¹ûÓÚcloud_filtered
+	pcl::VoxelGrid<PointT> vg;			// åˆ›å»ºæ»¤æ³¢å™¨å¯¹è±¡
+	vg.setInputCloud(cloud);			// è®¾ç½®å¾…æ»¤æ³¢çš„ç‚¹äº‘
+	vg.setLeafSize(lx, ly, lz);			// è®¾ç½®æœ€å°ä½“ç´ è¾¹é•¿ å•ä½ m
+	vg.filter(*cloud_filtered);			// æ‰§è¡Œæ»¤æ³¢ï¼Œä¿å­˜æ»¤æ³¢ç»“æœäºcloud_filtered
 
 }
 
-// -----------------¾ùÔÈ²ÉÑù------------------- 
+// -----------------å‡åŒ€é‡‡æ ·------------------- 
 void uniformSampling(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr &cloud_filtered, double radius)
 {
 	/*
-	Í¨¹ı¹¹½¨Ö¸¶¨°ë¾¶µÄÇòÌå¶ÔµãÔÆ½øĞĞÏÂ²ÉÑùÂË²¨£¬
-	½«Ã¿Ò»¸öÇòÄÚ¾àÀëÇòÌåÖĞĞÄ×î½üµÄµã×÷ÎªÏÂ²ÉÑùÖ®ºóµÄµãÊä³ö
+	é€šè¿‡æ„å»ºæŒ‡å®šåŠå¾„çš„çƒä½“å¯¹ç‚¹äº‘è¿›è¡Œä¸‹é‡‡æ ·æ»¤æ³¢ï¼Œ
+	å°†æ¯ä¸€ä¸ªçƒå†…è·ç¦»çƒä½“ä¸­å¿ƒæœ€è¿‘çš„ç‚¹ä½œä¸ºä¸‹é‡‡æ ·ä¹‹åçš„ç‚¹è¾“å‡º
 	*/
 	pcl::UniformSampling<PointT> us;
 	us.setInputCloud(cloud);
-	us.setRadiusSearch(radius);	//ÉèÖÃÂË²¨ÊÇ´´½¨ÇòµÄ°ë¾¶
+	us.setRadiusSearch(radius);	//è®¾ç½®æ»¤æ³¢æ˜¯åˆ›å»ºçƒçš„åŠå¾„
 	us.filter(*cloud_filtered);
 
 }
 
-// -----------------Ëæ»ú²ÉÑù------------------- 
+// -----------------éšæœºé‡‡æ ·------------------- 
 void randomSampling(const pcl::PointCloud<PointT>::Ptr cloud, int sample_num, pcl::PointCloud<PointT>::Ptr& cloud_filtered)
 {
 
@@ -111,162 +61,162 @@ void randomSampling(const pcl::PointCloud<PointT>::Ptr cloud, int sample_num, pc
 
 }
 
-// -----------------·¨Ïß¿Õ¼ä²ÉÑù------------------- 
+// -----------------æ³•çº¿ç©ºé—´é‡‡æ ·------------------- 
 void normalSpaceSampling(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, pcl::PointCloud<PointT>::Ptr& cloud_filtered)
 {
 	/*
-	ÔÚ·¨ÏòÁ¿¿Õ¼äÄÚ¾ùÔÈËæ»ú²ÉÑù£¬Ê¹ËùÑ¡µãÖ®¼äµÄ·¨Ïß·Ö²¼¾¡¿ÉÄÜ´ó
-	½á¹û±íÏÖÎªµØÎïÌØÕ÷±ä»¯´óµÄµØ·½Ê£Óàµã½Ï¶à£¬±ä»¯Ğ¡µÄµØ·½Ê£ÓàµãÏ¡ÉÙ£¬¿ÉÓĞĞ§±£»¤µØÎïÌØÕ÷
+	åœ¨æ³•å‘é‡ç©ºé—´å†…å‡åŒ€éšæœºé‡‡æ ·ï¼Œä½¿æ‰€é€‰ç‚¹ä¹‹é—´çš„æ³•çº¿åˆ†å¸ƒå°½å¯èƒ½å¤§
+	ç»“æœè¡¨ç°ä¸ºåœ°ç‰©ç‰¹å¾å˜åŒ–å¤§çš„åœ°æ–¹å‰©ä½™ç‚¹è¾ƒå¤šï¼Œå˜åŒ–å°çš„åœ°æ–¹å‰©ä½™ç‚¹ç¨€å°‘ï¼Œå¯æœ‰æ•ˆä¿æŠ¤åœ°ç‰©ç‰¹å¾
 	*/
 	pcl::NormalSpaceSampling<pcl::PointXYZ, pcl::Normal> nss;
-	nss.setInputCloud(cloud);// ÉèÖÃÊäÈëµãÔÆ
-	nss.setNormals(normals);// ÉèÖÃÔÚÊäÈëµãÔÆÉÏ¼ÆËãµÄ·¨Ïß
-	nss.setBins(2, 2, 2);// ÉèÖÃx,y,z·½ÏòbinsµÄ¸öÊı
-	nss.setSeed(0); // ÉèÖÃÖÖ×Óµã
-	nss.setSample(1000); // ÉèÖÃÒª²ÉÑùµÄË÷ÒıÊı¡£
+	nss.setInputCloud(cloud);// è®¾ç½®è¾“å…¥ç‚¹äº‘
+	nss.setNormals(normals);// è®¾ç½®åœ¨è¾“å…¥ç‚¹äº‘ä¸Šè®¡ç®—çš„æ³•çº¿
+	nss.setBins(2, 2, 2);// è®¾ç½®x,y,zæ–¹å‘binsçš„ä¸ªæ•°
+	nss.setSeed(0); // è®¾ç½®ç§å­ç‚¹
+	nss.setSample(1000); // è®¾ç½®è¦é‡‡æ ·çš„ç´¢å¼•æ•°ã€‚
 	nss.filter(*cloud_filtered);
 
 }
 
-// -----------------Ë÷Òı¿Õ¼ä²ÉÑù------------------- 
+// -----------------ç´¢å¼•ç©ºé—´é‡‡æ ·------------------- 
 void surfaceNormalSampling(const pcl::PointCloud<PointNormalT>::Ptr cloud_with_normals, pcl::PointCloud<PointNormalT>::Ptr& cloud_filtered)
 {
 	/*
-	½«ÊäÈë¿Õ¼ä»®·ÖÎªÍø¸ñ£¬Ö±µ½Ã¿¸öÍø¸ñÖĞ×î¶à°üº¬N¸öµã£¬²¢ÔÚÃ¿¸öÍø¸ñÖĞËæ»ú²ÉÑù
-	Ê¹ÓÃÃ¿¸öÍø¸ñµÄN¸öµãÀ´¼ÆËãNormal,Íø¸ñÄÚËùÓĞµã¶¼±»¸³ÓèÏàÍ¬µÄ·¨Ïß
+	å°†è¾“å…¥ç©ºé—´åˆ’åˆ†ä¸ºç½‘æ ¼ï¼Œç›´åˆ°æ¯ä¸ªç½‘æ ¼ä¸­æœ€å¤šåŒ…å«Nä¸ªç‚¹ï¼Œå¹¶åœ¨æ¯ä¸ªç½‘æ ¼ä¸­éšæœºé‡‡æ ·
+	ä½¿ç”¨æ¯ä¸ªç½‘æ ¼çš„Nä¸ªç‚¹æ¥è®¡ç®—Normal,ç½‘æ ¼å†…æ‰€æœ‰ç‚¹éƒ½è¢«èµ‹äºˆç›¸åŒçš„æ³•çº¿
 	*/
 	pcl::SamplingSurfaceNormal <pcl::PointNormal> ssn;
 	ssn.setInputCloud(cloud_with_normals);
-	ssn.setSample(10);     // ÉèÖÃÃ¿¸öÍø¸ñµÄ×î´óÑù±¾Êı n
-	ssn.setRatio(0.1f);    // ÉèÖÃ²ÉÑùÂÊ&
-	ssn.filter(*cloud_filtered);// Êä³öµÄµãÔÆÊÇÓÃÃ¿¸öÍø¸ñÀïµÄ×î´óÑù±¾Êın x &
+	ssn.setSample(10);     // è®¾ç½®æ¯ä¸ªç½‘æ ¼çš„æœ€å¤§æ ·æœ¬æ•° n
+	ssn.setRatio(0.1f);    // è®¾ç½®é‡‡æ ·ç‡&
+	ssn.filter(*cloud_filtered);// è¾“å‡ºçš„ç‚¹äº‘æ˜¯ç”¨æ¯ä¸ªç½‘æ ¼é‡Œçš„æœ€å¤§æ ·æœ¬æ•°n x &
 
 }
 
-// -----------------Ö±Í¨ÂË²¨-------------------
+// -----------------ç›´é€šæ»¤æ³¢-------------------
 void pass_through_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered, char *axis, int min, int max)
 {
 	/*
-	Ö¸¶¨Ò»¸öÎ¬¶ÈÒÔ¼°¸ÃÎ¬¶ÈÏÂµÄÖµÓò
-	±éÀúµãÔÆÖĞµÄÃ¿¸öµã£¬ÅĞ¶Ï¸ÃµãÔÚÖ¸¶¨Î¬¶ÈÉÏµÄÈ¡ÖµÊÇ·ñÔÚÖµÓòÄÚ£¬É¾³ıÈ¡Öµ²»ÔÚÖµÓòÄÚµÄµã
-	±éÀú½áÊø£¬ÁôÏÂµÄµã¼´¹¹³ÉÂË²¨ºóµÄµãÔÆ¡£
+	æŒ‡å®šä¸€ä¸ªç»´åº¦ä»¥åŠè¯¥ç»´åº¦ä¸‹çš„å€¼åŸŸ
+	éå†ç‚¹äº‘ä¸­çš„æ¯ä¸ªç‚¹ï¼Œåˆ¤æ–­è¯¥ç‚¹åœ¨æŒ‡å®šç»´åº¦ä¸Šçš„å–å€¼æ˜¯å¦åœ¨å€¼åŸŸå†…ï¼Œåˆ é™¤å–å€¼ä¸åœ¨å€¼åŸŸå†…çš„ç‚¹
+	éå†ç»“æŸï¼Œç•™ä¸‹çš„ç‚¹å³æ„æˆæ»¤æ³¢åçš„ç‚¹äº‘ã€‚
 	*/
-	pcl::PassThrough<PointT> pass;      //´´½¨ÂË²¨Æ÷¶ÔÏó
-	pass.setInputCloud(cloud);			//ÉèÖÃ´ıÂË²¨µÄµãÔÆ
-	pass.setFilterFieldName(axis);		//ÉèÖÃÔÚZÖá·½ÏòÉÏ½øĞĞÂË²¨
-	pass.setFilterLimits(min, max);		//ÉèÖÃÂË²¨·¶Î§Îª0~1,ÔÚ·¶Î§Ö®ÍâµÄµã»á±»¼ô³ı
-	pass.filter(*cloud_filtered);		//¿ªÊ¼¹ıÂË
+	pcl::PassThrough<PointT> pass;      //åˆ›å»ºæ»¤æ³¢å™¨å¯¹è±¡
+	pass.setInputCloud(cloud);			//è®¾ç½®å¾…æ»¤æ³¢çš„ç‚¹äº‘
+	pass.setFilterFieldName(axis);		//è®¾ç½®åœ¨Zè½´æ–¹å‘ä¸Šè¿›è¡Œæ»¤æ³¢
+	pass.setFilterLimits(min, max);		//è®¾ç½®æ»¤æ³¢èŒƒå›´ä¸º0~1,åœ¨èŒƒå›´ä¹‹å¤–çš„ç‚¹ä¼šè¢«å‰ªé™¤
+	pass.filter(*cloud_filtered);		//å¼€å§‹è¿‡æ»¤
 }
 
-// -----------------Í³¼ÆÂË²¨-------------------
+// -----------------ç»Ÿè®¡æ»¤æ³¢-------------------
 void statistical_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered, int nr_k, double stddev_mult)
 {
 	/*
-	Í³¼ÆÂË²¨Æ÷Ö÷ÒªÓÃÓÚÈ¥³ıÃ÷ÏÔÀëÈºµã¡£ ÀëÈºµãÌØÕ÷ÔÚ¿Õ¼äÖĞ·Ö²¼Ï¡Êè¡£
-	¶¨ÒåÄ³´¦µãÔÆĞ¡ÓÚÄ³¸öÃÜ¶È£¬¼ÈµãÔÆÎŞĞ§¡£
-	¼ÆËãÃ¿¸öµãµ½Æä×î½üµÄk¸öµãÆ½¾ù¾àÀë¡£ÔòµãÔÆÖĞËùÓĞµãµÄ¾àÀëÓ¦¹¹³É¸ßË¹·Ö²¼¡£
-	¸ù¾İ¸ø¶¨¾ùÖµÓë·½²î£¬¿ÉÌŞ³ı·½²îÖ®ÍâµÄµã¡£
+	ç»Ÿè®¡æ»¤æ³¢å™¨ä¸»è¦ç”¨äºå»é™¤æ˜æ˜¾ç¦»ç¾¤ç‚¹ã€‚ ç¦»ç¾¤ç‚¹ç‰¹å¾åœ¨ç©ºé—´ä¸­åˆ†å¸ƒç¨€ç–ã€‚
+	å®šä¹‰æŸå¤„ç‚¹äº‘å°äºæŸä¸ªå¯†åº¦ï¼Œæ—¢ç‚¹äº‘æ— æ•ˆã€‚
+	è®¡ç®—æ¯ä¸ªç‚¹åˆ°å…¶æœ€è¿‘çš„kä¸ªç‚¹å¹³å‡è·ç¦»ã€‚åˆ™ç‚¹äº‘ä¸­æ‰€æœ‰ç‚¹çš„è·ç¦»åº”æ„æˆé«˜æ–¯åˆ†å¸ƒã€‚
+	æ ¹æ®ç»™å®šå‡å€¼ä¸æ–¹å·®ï¼Œå¯å‰”é™¤æ–¹å·®ä¹‹å¤–çš„ç‚¹ã€‚
 	*/
-	pcl::StatisticalOutlierRemoval<PointT> sor;	// ´´½¨ÂË²¨Æ÷¶ÔÏó
-	sor.setInputCloud(cloud);                   // ÉèÖÃ´ıÂË²¨µÄµãÔÆ
-	sor.setMeanK(nr_k);                         // ÉèÖÃÔÚ½øĞĞÍ³¼ÆÊ±¿¼ÂÇ²éÑ¯µãÁÚ½üµãÊı
-	sor.setStddevMulThresh(stddev_mult);        // ÉèÖÃÅĞ¶ÏÊÇ·ñÎªÀëÈºµãµÄãĞÖµ
-	sor.filter(*cloud_filtered);                // Ö´ĞĞÂË²¨´¦Àí±£´æÄÚµãµ½cloud_filtered
+	pcl::StatisticalOutlierRemoval<PointT> sor;	// åˆ›å»ºæ»¤æ³¢å™¨å¯¹è±¡
+	sor.setInputCloud(cloud);                   // è®¾ç½®å¾…æ»¤æ³¢çš„ç‚¹äº‘
+	sor.setMeanK(nr_k);                         // è®¾ç½®åœ¨è¿›è¡Œç»Ÿè®¡æ—¶è€ƒè™‘æŸ¥è¯¢ç‚¹é‚»è¿‘ç‚¹æ•°
+	sor.setStddevMulThresh(stddev_mult);        // è®¾ç½®åˆ¤æ–­æ˜¯å¦ä¸ºç¦»ç¾¤ç‚¹çš„é˜ˆå€¼
+	sor.filter(*cloud_filtered);                // æ‰§è¡Œæ»¤æ³¢å¤„ç†ä¿å­˜å†…ç‚¹åˆ°cloud_filtered
 
 }
 
-// -----------------°ë¾¶ÂË²¨-------------------
+// -----------------åŠå¾„æ»¤æ³¢-------------------
 void radius_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered, double radius, int min_pts)
 {
 	/*
-	°ë¾¶ÂË²¨Æ÷ÒÔÄ³µãÎªÖĞĞÄ»­Ò»¸öÔ²¼ÆËãÂäÔÚ¸ÃÔ²ÖĞµãµÄÊıÁ¿£¬
-	µ±ÊıÁ¿´óÓÚ¸ø¶¨ÖµÊ±£¬Ôò±£Áô¸Ãµã£¬ÊıÁ¿Ğ¡ÓÚ¸ø¶¨ÖµÔòÌŞ³ı¸Ãµã¡£
+	åŠå¾„æ»¤æ³¢å™¨ä»¥æŸç‚¹ä¸ºä¸­å¿ƒç”»ä¸€ä¸ªåœ†è®¡ç®—è½åœ¨è¯¥åœ†ä¸­ç‚¹çš„æ•°é‡ï¼Œ
+	å½“æ•°é‡å¤§äºç»™å®šå€¼æ—¶ï¼Œåˆ™ä¿ç•™è¯¥ç‚¹ï¼Œæ•°é‡å°äºç»™å®šå€¼åˆ™å‰”é™¤è¯¥ç‚¹ã€‚
 	*/
 	pcl::RadiusOutlierRemoval<PointT> ror;
-	ror.setInputCloud(cloud);				// ÊäÈëµãÔÆ
-	ror.setRadiusSearch(radius);			// ÉèÖÃ°ë¾¶Îª0.1m·¶Î§ÄÚÕÒÁÙ½üµã
-	ror.setMinNeighborsInRadius(min_pts);	// ÉèÖÃ²éÑ¯µãµÄÁÚÓòµã¼¯ÊıĞ¡ÓÚ10É¾³ı
-	ror.filter(*cloud_filtered);			// Ö´ĞĞÂË²¨
+	ror.setInputCloud(cloud);				// è¾“å…¥ç‚¹äº‘
+	ror.setRadiusSearch(radius);			// è®¾ç½®åŠå¾„ä¸º0.1mèŒƒå›´å†…æ‰¾ä¸´è¿‘ç‚¹
+	ror.setMinNeighborsInRadius(min_pts);	// è®¾ç½®æŸ¥è¯¢ç‚¹çš„é‚»åŸŸç‚¹é›†æ•°å°äº10åˆ é™¤
+	ror.filter(*cloud_filtered);			// æ‰§è¡Œæ»¤æ³¢
 }
 
-// -----------------Ìõ¼şÂË²¨-------------------
+// -----------------æ¡ä»¶æ»¤æ³¢-------------------
 void condition_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered)
 {
 	/*
-	Ìõ¼şÂË²¨Æ÷Í¨¹ıÉè¶¨ÂË²¨Ìõ¼ş½øĞĞÂË²¨£¬É¾³ı²»·ûºÏÓÃ»§Ö¸¶¨µÄÒ»¸ö»òÕß¶à¸öÌõ¼ş¡£
-	Ö±Í¨ÂË²¨Æ÷ÊÇÒ»ÖÖ½Ï¼òµ¥µÄÌõ¼şÂË²¨Æ÷¡£
+	æ¡ä»¶æ»¤æ³¢å™¨é€šè¿‡è®¾å®šæ»¤æ³¢æ¡ä»¶è¿›è¡Œæ»¤æ³¢ï¼Œåˆ é™¤ä¸ç¬¦åˆç”¨æˆ·æŒ‡å®šçš„ä¸€ä¸ªæˆ–è€…å¤šä¸ªæ¡ä»¶ã€‚
+	ç›´é€šæ»¤æ³¢å™¨æ˜¯ä¸€ç§è¾ƒç®€å•çš„æ¡ä»¶æ»¤æ³¢å™¨ã€‚
 	*/
-	pcl::ConditionAnd<PointT>::Ptr range_cond(new pcl::ConditionAnd<PointT>());//´´½¨Ìõ¼ş¶¨Òå¶ÔÏórange_cond
-	//ÎªÌõ¼ş¶¨Òå¶ÔÏóÌí¼Ó±È½ÏËã×Ó
+	pcl::ConditionAnd<PointT>::Ptr range_cond(new pcl::ConditionAnd<PointT>());//åˆ›å»ºæ¡ä»¶å®šä¹‰å¯¹è±¡range_cond
+	//ä¸ºæ¡ä»¶å®šä¹‰å¯¹è±¡æ·»åŠ æ¯”è¾ƒç®—å­
 	range_cond->addComparison(pcl::FieldComparison<PointT>::ConstPtr(new
-		pcl::FieldComparison<PointT>("x", pcl::ComparisonOps::GT, -0.1)));	//Ìí¼ÓÔÚx×Ö¶ÎÉÏ´óÓÚ -0.1 µÄ±È½ÏËã×Ó
+		pcl::FieldComparison<PointT>("x", pcl::ComparisonOps::GT, -0.1)));	//æ·»åŠ åœ¨xå­—æ®µä¸Šå¤§äº -0.1 çš„æ¯”è¾ƒç®—å­
 	range_cond->addComparison(pcl::FieldComparison<PointT>::ConstPtr(new
-		pcl::FieldComparison<PointT>("x", pcl::ComparisonOps::LT, 1.0)));	//Ìí¼ÓÔÚx×Ö¶ÎÉÏĞ¡ÓÚ 1.0 µÄ±È½ÏËã×Ó
-	pcl::ConditionalRemoval<PointT> cr;	//´´½¨ÂË²¨Æ÷¶ÔÏó
-	cr.setCondition(range_cond);				//ÓÃÌõ¼ş¶¨Òå¶ÔÏó³õÊ¼»¯
-	cr.setInputCloud(cloud);					//ÉèÖÃ´ıÂË²¨µãÔÆ
-	//cr.setKeepOrganized(true);				//ÉèÖÃ±£³ÖµãÔÆµÄ½á¹¹
-	//cr.setUserFilterValue(5);					//½«¹ıÂËµôµÄµãÓÃ£¨5£¬5£¬5£©´úÌæ
-	cr.filter(*cloud_filtered);					//Ö´ĞĞÂË²¨£¬±£´æÂË²¨½á¹ûÓÚcloud_filtered
+		pcl::FieldComparison<PointT>("x", pcl::ComparisonOps::LT, 1.0)));	//æ·»åŠ åœ¨xå­—æ®µä¸Šå°äº 1.0 çš„æ¯”è¾ƒç®—å­
+	pcl::ConditionalRemoval<PointT> cr;	//åˆ›å»ºæ»¤æ³¢å™¨å¯¹è±¡
+	cr.setCondition(range_cond);				//ç”¨æ¡ä»¶å®šä¹‰å¯¹è±¡åˆå§‹åŒ–
+	cr.setInputCloud(cloud);					//è®¾ç½®å¾…æ»¤æ³¢ç‚¹äº‘
+	//cr.setKeepOrganized(true);				//è®¾ç½®ä¿æŒç‚¹äº‘çš„ç»“æ„
+	//cr.setUserFilterValue(5);					//å°†è¿‡æ»¤æ‰çš„ç‚¹ç”¨ï¼ˆ5ï¼Œ5ï¼Œ5ï¼‰ä»£æ›¿
+	cr.filter(*cloud_filtered);					//æ‰§è¡Œæ»¤æ³¢ï¼Œä¿å­˜æ»¤æ³¢ç»“æœäºcloud_filtered
 }
 
 
-// -----------------Ë÷ÒıÌáÈ¡-------------------
+// -----------------ç´¢å¼•æå–-------------------
 void extract_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointIndices::Ptr inliers, pcl::PointCloud<PointT>::Ptr& cloud_filtered)
 {
-	pcl::ExtractIndices<PointT> extract;		//´´½¨µãÔÆÌáÈ¡¶ÔÏó
-	extract.setInputCloud(cloud);				//ÉèÖÃÊäÈëµãÔÆ
-	extract.setIndices(inliers);				//ÉèÖÃ·Ö¸îºóµÄÄÚµãinliersÎªĞèÒªÌáÈ¡µÄµã¼¯
-	extract.setNegative(false);					//ÉèÖÃÌáÈ¡ÄÚµã¶ø·ÇÍâµã£¬Ä¬ÈÏfalse
-	extract.filter(*cloud_filtered);			//ÌáÈ¡µã¼¯²¢´æ´¢µ½ cloud_filtered
+	pcl::ExtractIndices<PointT> extract;		//åˆ›å»ºç‚¹äº‘æå–å¯¹è±¡
+	extract.setInputCloud(cloud);				//è®¾ç½®è¾“å…¥ç‚¹äº‘
+	extract.setIndices(inliers);				//è®¾ç½®åˆ†å‰²åçš„å†…ç‚¹inliersä¸ºéœ€è¦æå–çš„ç‚¹é›†
+	extract.setNegative(false);					//è®¾ç½®æå–å†…ç‚¹è€Œéå¤–ç‚¹ï¼Œé»˜è®¤false
+	extract.filter(*cloud_filtered);			//æå–ç‚¹é›†å¹¶å­˜å‚¨åˆ° cloud_filtered
 }
 
 
-// -----------------Í¶Ó°ÂË²¨-------------------
+// -----------------æŠ•å½±æ»¤æ³¢-------------------
 void project_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::ModelCoefficients::Ptr coefficients, pcl::PointCloud<PointT>::Ptr& cloud_projected)
 {
 	/*
-	½«µãÍ¶Ó°µ½Ò»¸ö²ÎÊı»¯Ä£ĞÍÉÏ£¬Õâ¸ö²ÎÊı»¯Ä£ĞÍ¿ÉÒÔÊÇÆ½Ãæ¡¢Ô²Çò¡¢Ô²Öù¡¢×¶ĞÎµÈ½øĞĞÍ¶Ó°ÂË²¨¡£
-	°ÑÈıÎ¬µãÔÆÍ¶Ó°µ½¶şÎ¬Í¼ÏñÉÏ£¬È»ºóÓÃÍ¼Ïñ´¦ÀíµÄ·½·¨½øĞĞ´¦Àí¡£
+	å°†ç‚¹æŠ•å½±åˆ°ä¸€ä¸ªå‚æ•°åŒ–æ¨¡å‹ä¸Šï¼Œè¿™ä¸ªå‚æ•°åŒ–æ¨¡å‹å¯ä»¥æ˜¯å¹³é¢ã€åœ†çƒã€åœ†æŸ±ã€é”¥å½¢ç­‰è¿›è¡ŒæŠ•å½±æ»¤æ³¢ã€‚
+	æŠŠä¸‰ç»´ç‚¹äº‘æŠ•å½±åˆ°äºŒç»´å›¾åƒä¸Šï¼Œç„¶åç”¨å›¾åƒå¤„ç†çš„æ–¹æ³•è¿›è¡Œå¤„ç†ã€‚
 	*/
-	pcl::ProjectInliers<pcl::PointXYZ> proj;//´´½¨Í¶Ó°ÂË²¨Æ÷¶ÔÏó
-	proj.setModelType(pcl::SACMODEL_PLANE);	//ÉèÖÃ¶ÔÏó¶ÔÓ¦µÄÍ¶Ó°Ä£ĞÍ
-	proj.setInputCloud(cloud);				//ÉèÖÃÊäÈëµãÔÆ
-	proj.setModelCoefficients(coefficients);//ÉèÖÃÄ£ĞÍ¶ÔÓ¦µÄÏµÊı
-	proj.filter(*cloud_projected);			//Ö´ĞĞÍ¶Ó°ÂË²¨£¬´æ´¢½á¹ûÓÚcloud_projected
+	pcl::ProjectInliers<pcl::PointXYZ> proj;//åˆ›å»ºæŠ•å½±æ»¤æ³¢å™¨å¯¹è±¡
+	proj.setModelType(pcl::SACMODEL_PLANE);	//è®¾ç½®å¯¹è±¡å¯¹åº”çš„æŠ•å½±æ¨¡å‹
+	proj.setInputCloud(cloud);				//è®¾ç½®è¾“å…¥ç‚¹äº‘
+	proj.setModelCoefficients(coefficients);//è®¾ç½®æ¨¡å‹å¯¹åº”çš„ç³»æ•°
+	proj.filter(*cloud_projected);			//æ‰§è¡ŒæŠ•å½±æ»¤æ³¢ï¼Œå­˜å‚¨ç»“æœäºcloud_projected
 }
 
-// -----------------Ä£ĞÍÂË²¨-------------------
+// -----------------æ¨¡å‹æ»¤æ³¢-------------------
 void model_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::ModelCoefficients model_coeff, pcl::PointCloud<PointT>::Ptr& cloud_filtered)
 {
 	/*
-	¸ù¾İµãµ½Ä£ĞÍµÄ¾àÀë£¬ÉèÖÃ¾àÀëãĞÖµ¹ıÂË·ÇÄ£ĞÍµã, »ùÓÚÄ£ĞÍµÄµã·Ö¸î²Ù×÷£¬½«Ä£ĞÍÍâµÄµã´ÓµãÔÆÖĞÌŞ³ı¡£
+	æ ¹æ®ç‚¹åˆ°æ¨¡å‹çš„è·ç¦»ï¼Œè®¾ç½®è·ç¦»é˜ˆå€¼è¿‡æ»¤éæ¨¡å‹ç‚¹, åŸºäºæ¨¡å‹çš„ç‚¹åˆ†å‰²æ“ä½œï¼Œå°†æ¨¡å‹å¤–çš„ç‚¹ä»ç‚¹äº‘ä¸­å‰”é™¤ã€‚
 	*/
-	pcl::ModelOutlierRemoval<PointT> filter;		//´´½¨Ä£ĞÍÂË²¨Æ÷¶ÔÏó
-	filter.setModelCoefficients(model_coeff);		//ÎªÄ£ĞÍ¶ÔÏóÌí¼ÓÄ£ĞÍÏµÊı
-	filter.setThreshold(0.1);						//ÉèÖÃÅĞ¶ÏÊÇ·ñÎªÄ£ĞÍÄÚµãµÄãĞÖµ
-	filter.setModelType(pcl::SACMODEL_PLANE);		//ÉèÖÃÄ£ĞÍÀà±ğ
-	filter.setInputCloud(cloud);					//ÊäÈë´ıÂË²¨µãÔÆ
-	filter.setNegative(false);						//Ä¬ÈÏfalse£¬ÌáÈ¡Ä£ĞÍÄÚµã£»true£¬ÌáÈ¡Ä£ĞÍÍâµã
-	filter.filter(*cloud_filtered);					//Ö´ĞĞÄ£ĞÍÂË²¨£¬±£´æÂË²¨½á¹ûÓÚcloud_filtered
+	pcl::ModelOutlierRemoval<PointT> filter;		//åˆ›å»ºæ¨¡å‹æ»¤æ³¢å™¨å¯¹è±¡
+	filter.setModelCoefficients(model_coeff);		//ä¸ºæ¨¡å‹å¯¹è±¡æ·»åŠ æ¨¡å‹ç³»æ•°
+	filter.setThreshold(0.1);						//è®¾ç½®åˆ¤æ–­æ˜¯å¦ä¸ºæ¨¡å‹å†…ç‚¹çš„é˜ˆå€¼
+	filter.setModelType(pcl::SACMODEL_PLANE);		//è®¾ç½®æ¨¡å‹ç±»åˆ«
+	filter.setInputCloud(cloud);					//è¾“å…¥å¾…æ»¤æ³¢ç‚¹äº‘
+	filter.setNegative(false);						//é»˜è®¤falseï¼Œæå–æ¨¡å‹å†…ç‚¹ï¼›trueï¼Œæå–æ¨¡å‹å¤–ç‚¹
+	filter.filter(*cloud_filtered);					//æ‰§è¡Œæ¨¡å‹æ»¤æ³¢ï¼Œä¿å­˜æ»¤æ³¢ç»“æœäºcloud_filtered
 
 }
 
-// -----------------¸ßË¹ÂË²¨-------------------
+// -----------------é«˜æ–¯æ»¤æ³¢-------------------
 void gaussian_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered)
 {
-	//ÉèÖÃkernelÏà¹Ø²ÎÊı
+	//è®¾ç½®kernelç›¸å…³å‚æ•°
 	pcl::filters::GaussianKernel<PointT, PointT> kernel;
-	kernel.setSigma(4);//¸ßË¹º¯ÊıµÄ±ê×¼·½²î£¬¾ö¶¨º¯ÊıµÄ¿í¶È
-	kernel.setThresholdRelativeToSigma(4);//ÉèÖÃÏà¶ÔSigma²ÎÊıµÄ¾àÀëãĞÖµ
-	kernel.setThreshold(0.05);//ÉèÖÃ¾àÀëãĞÖµ£¬Èôµã¼ä¾àÀë´óÓÚãĞÖµÔò²»Óè¿¼ÂÇ
+	kernel.setSigma(4);//é«˜æ–¯å‡½æ•°çš„æ ‡å‡†æ–¹å·®ï¼Œå†³å®šå‡½æ•°çš„å®½åº¦
+	kernel.setThresholdRelativeToSigma(4);//è®¾ç½®ç›¸å¯¹Sigmaå‚æ•°çš„è·ç¦»é˜ˆå€¼
+	kernel.setThreshold(0.05);//è®¾ç½®è·ç¦»é˜ˆå€¼ï¼Œè‹¥ç‚¹é—´è·ç¦»å¤§äºé˜ˆå€¼åˆ™ä¸äºˆè€ƒè™‘
 
 	pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
 	tree->setInputCloud(cloud);
 
-	//ÉèÖÃConvolutionÏà¹Ø²ÎÊı
+	//è®¾ç½®Convolutionç›¸å…³å‚æ•°
 	pcl::filters::Convolution3D<PointT, PointT, pcl::filters::GaussianKernel<PointT, PointT>> convolution;
-	convolution.setKernel(kernel);//ÉèÖÃ¾í»ıºË
+	convolution.setKernel(kernel);//è®¾ç½®å·ç§¯æ ¸
 	convolution.setInputCloud(cloud);
 	convolution.setNumberOfThreads(8);
 	convolution.setSearchMethod(tree);
@@ -274,7 +224,7 @@ void gaussian_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<P
 	convolution.convolve(*cloud_filtered);
 }
 
-// -----------------·½¿òÂË²¨-------------------
+// -----------------æ–¹æ¡†æ»¤æ³¢-------------------
 void box_filter(const pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<PointT>::Ptr& cloud_filtered, Eigen::Vector4f min_pt, Eigen::Vector4f max_pt)
 {
 	std::vector<int> indices;
@@ -319,7 +269,7 @@ void removeZeoPoints(const pcl::PointCloud<PointT>::Ptr source_cloud, pcl::Point
 		}
 	}
 
-	pcl::copyPointCloud(*source_cloud, pi0, *extract_cloud);//½«¶ÔÓ¦Ë÷ÒıµÄµã´æ´¢
+	pcl::copyPointCloud(*source_cloud, pi0, *extract_cloud);//å°†å¯¹åº”ç´¢å¼•çš„ç‚¹å­˜å‚¨
 }
 
 void remove_tf_zeo_point(const pcl::PointCloud<PointT>::Ptr source_cloud, const Eigen::Matrix4f T_c2b, pcl::PointCloud<PointT>::Ptr &extract_cloud)
@@ -343,7 +293,7 @@ void remove_tf_zeo_point(const pcl::PointCloud<PointT>::Ptr source_cloud, const 
 		}
 	}
 
-	pcl::copyPointCloud(*source_cloud, pi0, *extract_cloud);//½«¶ÔÓ¦Ë÷ÒıµÄµã´æ´¢
+	pcl::copyPointCloud(*source_cloud, pi0, *extract_cloud);//å°†å¯¹åº”ç´¢å¼•çš„ç‚¹å­˜å‚¨
 }
 
 void remove_repeat_point(const pcl::PointCloud<PointT>::Ptr source_cloud, pcl::PointCloud<PointT>::Ptr& filtered_cloud)
@@ -351,10 +301,10 @@ void remove_repeat_point(const pcl::PointCloud<PointT>::Ptr source_cloud, pcl::P
 	pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
 	tree->setInputCloud(source_cloud);
 
-	std::vector<int> nn_indices;  // ´æ·Å½üÁÚË÷Òı
-	std::vector<float> nn_dists;  // ´æ·Å½üÁÚ¾àÀë
+	std::vector<int> nn_indices;  // å­˜æ”¾è¿‘é‚»ç´¢å¼•
+	std::vector<float> nn_dists;  // å­˜æ”¾è¿‘é‚»è·ç¦»
 
-	float radius = 0.00001;		// ¾àÀëãĞÖµ£¬ÈôÁ½µãÖ®¼äµÄ¾àÀëÎª0.000001ÔòÈÏÎªÊÇÖØºÏµã
+	float radius = 0.00001;		// è·ç¦»é˜ˆå€¼ï¼Œè‹¥ä¸¤ç‚¹ä¹‹é—´çš„è·ç¦»ä¸º0.000001åˆ™è®¤ä¸ºæ˜¯é‡åˆç‚¹
 
 	pcl::PointIndices::Ptr outIdex(new pcl::PointIndices);
 	for (int i = 0; i < source_cloud->points.size(); ++i)
@@ -385,11 +335,11 @@ void remove_overlap_cloud(const pcl::PointCloud<PointT>::Ptr cloud_a, const pcl:
 	pcl::search::KdTree<PointT> tree;
 	tree.setInputCloud(cloud_b);
 
-	std::vector<int> pointIdxRadiusSearch;		// ±£´æÃ¿¸ö½üÁÚµãµÄË÷Òı
-	std::vector<float> PointRadiusSquaredDistance;	// ±£´æÃ¿¸ö½üÁÚµãÓë²éÕÒµãµÄÅ·ÊÏ¾àÀëµÄÆ½·½
-	float radius = 0.01;			// ¾àÀëãĞÖµ,ÈôÁ½µã¼ä¾àÀëĞ¡ÓÚ0.01£¬ÔòÈÏÎªÊÇÖØºÏµã
-	std::vector<int> overlap_index; // ÖØºÏË÷Òı
-	std::vector<int> remain_index;  // Ê£ÓàË÷Òı
+	std::vector<int> pointIdxRadiusSearch;		// ä¿å­˜æ¯ä¸ªè¿‘é‚»ç‚¹çš„ç´¢å¼•
+	std::vector<float> PointRadiusSquaredDistance;	// ä¿å­˜æ¯ä¸ªè¿‘é‚»ç‚¹ä¸æŸ¥æ‰¾ç‚¹çš„æ¬§æ°è·ç¦»çš„å¹³æ–¹
+	float radius = 0.01;			// è·ç¦»é˜ˆå€¼,è‹¥ä¸¤ç‚¹é—´è·ç¦»å°äº0.01ï¼Œåˆ™è®¤ä¸ºæ˜¯é‡åˆç‚¹
+	std::vector<int> overlap_index; // é‡åˆç´¢å¼•
+	std::vector<int> remain_index;  // å‰©ä½™ç´¢å¼•
 
 	for (size_t i = 0; i < cloud_a->points.size(); i++)
 	{
@@ -412,8 +362,8 @@ void remove_overlap_cloud(const pcl::PointCloud<PointT>::Ptr cloud_a, const pcl:
 
 	}
 
-	// ±£Áô·ÇÖØ¸´Ë÷Òı
-	pcl::copyPointCloud(*cloud_a, remain_index, *cloud_a_out);//½«¶ÔÓ¦Ë÷ÒıµÄµã´æ´¢
+	// ä¿ç•™éé‡å¤ç´¢å¼•
+	pcl::copyPointCloud(*cloud_a, remain_index, *cloud_a_out);//å°†å¯¹åº”ç´¢å¼•çš„ç‚¹å­˜å‚¨
 }
 
 
